@@ -94,8 +94,6 @@ For more in-depth analysis and visualization, please see the `results/` folder a
 
 ## Repository Structure
 
-## Repository Structure
-
 The repository follows a structured layout to ensure reproducibility:
 
 - **`data/`**: Contains the cleaned and merged dataset.
@@ -111,8 +109,9 @@ To replicate the research results, follow these steps:
 
 1. **Clone the Repository**:
 git clone https://github.com/jasontranDA/capstone_project_da401_fall2024.git
+
 2. **Setup Environment**:
-- Ensure you have R and required R packages installed. You can install required packages using:
+- Ensure you have R and required R packages installed. You can install the required packages using:
   ```R
   install.packages(c("data.table", "dplyr", "ggplot2", "stargazer", "margins", "kableExtra"))
   ```
@@ -124,7 +123,8 @@ git clone https://github.com/jasontranDA/capstone_project_da401_fall2024.git
   ```
 - Follow up with any update for exploratory analysis and modeling using the notebooks in `codes/`.
 
-For any questions or clarifications, consult the **`dataset_instructions.md`** in the `docs/` folder.
+For any questions or clarifications about the datasets, consult the **`dataset_instructions.md`** in the `datasets/` folder.
+For any questions or clarifications about the codes, consult the **`Code_instructions.md`** in the `codes/` folder.
 
 ---
 
