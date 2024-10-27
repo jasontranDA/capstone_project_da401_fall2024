@@ -96,13 +96,12 @@ For more in-depth analysis and visualization, please see the `results/` folder a
 
 The repository follows a structured layout to ensure reproducibility:
 
-├── data/ │ ├── merged_datasets_California.csv │ └── ... (links to external sources for raw data) ├── docs/ │ ├── dataset_instructions.md │ └── methodology_details.md ├── notebooks/ │ ├── data_cleaning.Rmd │ ├── exploratory_analysis.Rmd │ └── econometrics_analysis.Rmd ├── results/ │ ├── regression_results.html │ ├── marginal_effects_plots.png │ └── summary_statistics.html ├── scripts/ │ ├── data_preprocessing.R │ ├── econometrics_modeling.R │ └── visualization.R └── README.md
+
 
 - **`data/`**: Contains the cleaned and merged dataset.
 - **`docs/`**: Holds detailed instructions about the dataset and methods used.
-- **`notebooks/`**: Jupyter and RMarkdown notebooks for data cleaning, EDA, and econometrics modeling.
-- **`results/`**: Contains outputs such as regression tables, plots, and summaries.
-- **`scripts/`**: R scripts for various stages of the data processing and analysis.
+- **`codes/`**: R Codes notebooks for data cleaning, EDA, and econometrics modeling.
+
 
 ---
 
@@ -119,14 +118,11 @@ git clone https://github.com/jasontranDA/capstone_project_da401_fall2024.git
   ```
 
 3. **Run Scripts**:
-- Start with running the data cleaning script:
+- Start with running the data cleaning script in the project code quarto documents:
   ```
-  Rscript scripts/data_preprocessing.R
+  Rscript codes/Project_code.qmd
   ```
-- Follow up with exploratory analysis and modeling using the notebooks in `notebooks/`.
-
-4. **View Results**:
-- Check the `results/` folder for output visualizations and regression results.
+- Follow up with any update for exploratory analysis and modeling using the notebooks in `codes/`.
 
 For any questions or clarifications, consult the **`dataset_instructions.md`** in the `docs/` folder.
 
