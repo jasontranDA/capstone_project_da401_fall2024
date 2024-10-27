@@ -36,19 +36,6 @@ This data dictionary provides descriptions of all variables used in the DA 401 C
 
 ---
 
-### How to Add This to Your GitHub
 
-1. **Commit the Data Dictionary File**
-   - Scroll down to the **"Commit new file"** section.
-   - Enter a **commit message** like `"Add data dictionary for dataset"`.
-   - Ensure to select **"Commit directly to the `main` branch"**.
-   - Click on **"Commit new file"**.
 
-This data dictionary is now available for anyone visiting the repository, helping to document the key elements of your dataset.
 
-### Summary
-- **File Name**: `data_dictionary.md`
-- **Content**: Descriptions for each variable, data types, any transformations, and notes.
-- **Purpose**: Enhance reproducibility and provide clarity on the dataset structure.
-
-Once you've added this, the repository will be more professional and accessible to anyone looking to understand or collaborate on your project.
