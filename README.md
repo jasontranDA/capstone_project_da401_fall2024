@@ -94,13 +94,13 @@ For more in-depth analysis and visualization, please see the `results/` folder a
 
 ## Repository Structure
 
+## Repository Structure
+
 The repository follows a structured layout to ensure reproducibility:
-
-
 
 - **`data/`**: Contains the cleaned and merged dataset.
 - **`docs/`**: Holds detailed instructions about the dataset and methods used.
-- **`codes/`**: R Codes notebooks for data cleaning, EDA, and econometrics modeling.
+- **`codes/`**: Contains the single project Quarto document (`DA401_Capstone.qmd`) that includes all steps—data cleaning, EDA, and econometric modeling.
 
 
 ---
@@ -117,10 +117,10 @@ git clone https://github.com/jasontranDA/capstone_project_da401_fall2024.git
   install.packages(c("data.table", "dplyr", "ggplot2", "stargazer", "margins", "kableExtra"))
   ```
 
-3. **Run Scripts**:
-- Start with running the data cleaning script in the project code quarto documents:
+3. **Run the Project Code**:
+- Run the Quarto document in the codes/ folder to reproduce the analysis
   ```
-  Rscript codes/Project_code.qmd
+  codes/Project_code.qmd
   ```
 - Follow up with any update for exploratory analysis and modeling using the notebooks in `codes/`.
 
@@ -130,7 +130,7 @@ For any questions or clarifications, consult the **`dataset_instructions.md`** i
 
 ## Acknowledgments
 
-This project is carried out as part of the DA401 Capstone at **Denison University** under the guidance of the **Data Analytics** faculty. Special thanks to the **California Energy Commission** and the **Consumer Expenditure Survey** for providing the datasets used.
+This project is carried out as part of the DA401 Capstone at **Denison University** under the guidance of the **Dr. Matthew Lavin**. Special thanks to the **California Energy Commission** and the **Consumer Expenditure Survey** for providing the datasets used.
 
 ---
 
