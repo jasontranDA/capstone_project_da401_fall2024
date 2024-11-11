@@ -4,14 +4,14 @@ This repository contains all the materials for my senior thesis project, which e
 
 ## Repository Contents
 
-### Data
+### \data
 - Includes datasets used in the research and instructions for downloading additional data.
 
-### R Scripts
+### \R Scripts
 - **EDA.qmd**: Script for Exploratory Data Analysis.
 - **data_cleaning.qmd**: Script for data cleaning processes.
 - **Modeling.qmd**: Script for model building and analysis.
 
-### Documentation
+### \Documentation
 - Generated visualizations, including graphs, charts, and tables.
 - Full research report summarizing findings and insights.
