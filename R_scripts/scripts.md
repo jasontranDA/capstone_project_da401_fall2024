@@ -5,10 +5,10 @@
 ## RStudio: The IDE used for development.
 
 ### Load necessary libraries
--library(dplyr)          # Data manipulation
--library(ggplot2)        # Data visualization
--library(kableExtra)     # Formatting tables
--library(scales)         # Formatting axis labels and scaling
+- library(dplyr)          # Data manipulation
+- library(ggplot2)        # Data visualization
+- library(kableExtra)     # Formatting tables
+- library(scales)         # Formatting axis labels and scaling
 -library(tidyverse)      # Collection of R packages for data science
 -library(MatchIt)        # Propensity Score Matching (PSM)
 -library(car)            # Variance Inflation Factor (VIF) diagnostics
