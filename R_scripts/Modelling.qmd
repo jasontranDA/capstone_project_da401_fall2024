@@ -1,0 +1,171 @@
+---
+title: "Regression "
+author: "Jason Tran"
+institute: "Denison University"
+format: 
+  html:
+    theme: lux # Check here for more themes: https://quarto.org/docs/output-formats/html-themes.html
+    code-tools: true
+    code-fold: true
+    code-summary: "Code"
+    code-copy: hover
+    link-external-newwindow: true
+    tbl-cap-location: top
+    fig-cap-location: bottom
+
+self-contained: true
+editor: source
+---
+
+
+```{r}
+# Load necessary libraries
+library(tidyverse)
+library(MatchIt)    # For Propensity Score Matching (PSM)
+library(car)        # For VIF diagnostics
+library(lmtest)     # For residual tests (Breusch-Pagan, Durbin-Watson)
+library(sandwich)   # For robust standard errors
+library(modelsummary) # For regression output
+library(kableExtra) # For table formatting
+library(pandoc) # For Table Output in Word
+final_data <- read.csv("complete_data.csv")
+```
+
+
+```{r}
+
+
+# Run the baseline and extended models
+did_model_baseline <- lm(log(gasoline_expenditure) ~ post_tax_period * CA_i + fincbtxm + gender + educa2 + average_gas_price + factor(year), data = final_data)
+did_model_extended <- lm(log(gasoline_expenditure) ~ post_tax_period * CA_i + fincbtxm + gender + educa2 + fsize + 
+                         income_level_poverty + average_gas_price + factor(year) + 
+                         post_tax_period * gender + post_tax_period * educa2 +
+                         post_tax_period * income_level_poverty, data = final_data)
+
+# Manually compute robust standard errors
+se_baseline <- sqrt(diag(vcovHC(did_model_baseline, type = "HC1")))
+se_extended <- sqrt(diag(vcovHC(did_model_extended, type = "HC1")))
+
+# Create a list of models and their robust standard errors
+models <- list("Baseline Model" = did_model_baseline, "Extended Model" = did_model_extended)
+robust_se <- list(se_baseline, se_extended)
+
+# Customize and format the table for a professional presentation
+modelsummary(models,
+             statistic_override = robust_se, # Manually provide robust SEs
+             stars = TRUE, # Add significance stars
+             title = "Table 1: Difference-in-Differences Models for Gasoline Expenditure",
+             coef_rename = c(
+               "post_tax_period" = "Post Tax Period (After Policy = 1, 0 Otherwise)",
+               "CA_i" = "Treatment Indicator (CA = 1, 0 Otherwise)",
+               "post_tax_period:CA_i" = "Post Tax Period x Treatment Indicator",
+               "fincbtxm" = "Household Income (Quarterly Average)",
+               "gender" = "Gender (Female = 1, Male = 0)",
+               "educa2" = "Education Level (Multiple Categories)",
+               "fsize" = "Family Size (Number of Individuals)",
+               "income_level_poverty" = "Income Level (Poverty Indicator)",
+               "average_gas_price" = "Average Gasoline Price (Quarterly Average)"
+             ),
+             fmt = "%.3f", # Format numbers to 3 decimal places for readability
+             add_rows = tibble::tibble( # Add custom rows for household fixed effects and note
+               term = c("Household Fixed Effects", "Number of Observations"),
+               `Baseline Model` = c("Yes", as.character(length(did_model_baseline$residuals))),
+               `Extended Model` = c("Yes", as.character(length(did_model_extended$residuals)))
+             ),
+             notes = list("Standard errors are clustered at the household level. The extended model includes additional interaction terms to capture heterogeneous effects across demographic groups."),
+             output = "table_output.docx" # Save as .docx file
+)
+```
+
+
+```{r}
+# Propensity Score Matching (PSM)
+psm <- matchit(CA_i ~ fincbtxm + gender + educa2 + average_gas_price + fsize + income_level_poverty, 
+               data = final_data, method = "nearest")
+
+# Get the matched data
+matched_data <- match.data(psm)
+
+# Check for zero variance variables in the matched data
+zero_variance_check <- sapply(matched_data, function(x) length(unique(x)) == 1)
+zero_variance_vars <- names(zero_variance_check[zero_variance_check])
+
+# Step 2: Re-specify the models after excluding zero variance variables
+# Baseline Model on PSM Data
+did_model_psm_baseline <- lm(log(gasoline_expenditure) ~ post_tax_period * CA_i + fincbtxm + gender + educa2 + fsize + 
+                                   income_level_poverty + average_gas_price + factor(year), 
+                                   data = matched_data[, !(names(matched_data) %in% zero_variance_vars)])
+
+# Extended Model on PSM Data
+did_model_psm_extended <- lm(log(gasoline_expenditure) ~ post_tax_period * CA_i + fincbtxm + gender + educa2 + fsize + 
+                                   income_level_poverty + average_gas_price + factor(year) + 
+                                   post_tax_period * gender + post_tax_period * educa2 + 
+                                   post_tax_period * income_level_poverty, 
+                                   data = matched_data[, !(names(matched_data) %in% zero_variance_vars)])
+
+# Step 3: Manually compute robust standard errors
+se_psm_baseline <- sqrt(diag(vcovHC(did_model_psm_baseline, type = "HC1")))
+se_psm_extended <- sqrt(diag(vcovHC(did_model_psm_extended, type = "HC1")))
+
+# Step 4: Create a list of models and their robust standard errors
+models_psm <- list("PSM Baseline Model" = did_model_psm_baseline, "PSM Extended Model" = did_model_psm_extended)
+robust_se_psm <- list(se_psm_baseline, se_psm_extended)
+
+# Step 5: Customize and format the table for a professional presentation
+modelsummary(models_psm,
+             statistic_override = robust_se_psm, # Manually provide robust SEs
+             stars = TRUE, # Add significance stars
+             title = "PSM Difference-in-Differences Models for Gasoline Expenditure (Quarterly Average, 2007-2019)",
+             coef_rename = c("post_tax_period" = "Post Tax Period (After Policy = 1, 0 Otherwise)",
+                             "CA_i" = "Treatment Indicator (CA = 1, 0 Otherwise)",
+                             "post_tax_period:CA_i" = "Post Tax Period x Treatment Indicator (Interaction Term)",
+                             "fincbtxm" = "Household Income (Quarterly Average)",
+                             "gender" = "Gender (Female = 1, Male = 0)",
+                             "educa2" = "Education Level (Multiple Categories)",
+                             "fsize" = "Family Size (Number of Individuals)",
+                             "income_level_poverty" = "Income Level (Poverty Indicator)",
+                             "average_gas_price" = "Average Gasoline Price (Quarterly Average)",
+                             "post_tax_period:gender" = "Post Tax Period x Gender",
+                             "post_tax_period:educa2" = "Post Tax Period x Education Level",
+                             "post_tax_period:fsize" = "Post Tax Period x Family Size",
+                             "post_tax_period:income_level_poverty" = "Post Tax Period x Income Level (Poverty)"),
+             fmt = "%.3f", # Format numbers to 3 decimal places for readability
+             add_rows = tibble::tibble( # Add custom rows for household fixed effects and note
+               term = c("Household Fixed Effects", "Number of Observations"),
+               `PSM Baseline Model` = c("Yes", as.character(length(did_model_psm_baseline$residuals))),
+               `PSM Extended Model` = c("Yes", as.character(length(did_model_psm_extended$residuals)))
+             ),
+             notes = list("Standard errors are clustered at the household level. The extended model includes additional interaction terms to capture heterogeneous effects across demographic groups."),
+             output = "psm_models_output.docx" # Save as a Word document
+)
+```
+
+
+```{r}
+#  VIF Diagnostics for Multicollinearity
+vif_baseline <- tryCatch(vif(did_model_baseline, type = "predictor"), error = function(e) NA)
+vif_extended <- tryCatch(vif(did_model_extended, type = "predictor"), error = function(e) NA)
+vif_psm_baseline <- tryCatch(vif(did_model_psm_baseline, type = "predictor"), error = function(e) NA)
+vif_psm_extended <- tryCatch(vif(did_model_psm_extended, type = "predictor"), error = function(e) NA)
+
+#  Breusch-Pagan Test for Heteroskedasticity
+bp_baseline <- bptest(did_model_baseline)
+bp_extended <- bptest(did_model_extended)
+bp_psm_baseline <- bptest(did_model_psm_baseline)
+bp_psm_extended <- bptest(did_model_psm_extended)
+
+#  Durbin-Watson Test for Autocorrelation
+dw_baseline <- durbinWatsonTest(did_model_baseline)
+dw_extended <- durbinWatsonTest(did_model_extended)
+dw_psm_baseline <- durbinWatsonTest(did_model_psm_baseline)
+dw_psm_extended <- durbinWatsonTest(did_model_psm_extended)
+
+
+
+
+```
+
+
+
+
+

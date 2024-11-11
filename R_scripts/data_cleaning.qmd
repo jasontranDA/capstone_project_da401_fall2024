@@ -1,0 +1,355 @@
+![](images/clipboard-2249885403.png)
+
+---
+title: "Data Cleaning "
+author: "Jason Tran"
+institute: "Denison University"
+format: 
+  html:
+    theme: lux 
+    code-tools: true
+    code-fold: true
+    code-summary: "Code"
+    code-copy: hover
+    link-external-newwindow: true
+    tbl-cap-location: top
+    fig-cap-location: bottom
+
+self-contained: true
+editor: source
+---
+
+```{r}
+# DO NOT EDIT THIS
+
+knitr::opts_chunk$set(fig.align = 'center')
+knitr::opts_chunk$set(out.width = '90%')
+knitr::opts_chunk$set(results = 'hold')
+knitr::opts_chunk$set(fig.show = 'hold')
+knitr::opts_chunk$set(error = TRUE)
+knitr::opts_chunk$set(warning = FALSE)
+knitr::opts_chunk$set(message = FALSE)
+par(mar = c(4.1, 4.1, 1.1, 4.1))
+
+hooks = knitr::knit_hooks$get()
+hook_foldable = function(type) {
+  force(type)
+  function(x, options) {
+    res = hooks[[type]](x, options)
+    
+    if (isFALSE(options[[paste0("fold.", type)]])) return(res)
+    
+    paste0(
+      "<details open><summary>", gsub("^p", "P", gsub("^o", "O", type)), "</summary>\n\n",
+      res,
+      "\n\n</details>"
+    )
+  }
+}
+
+knitr::knit_hooks$set(
+  output = hook_foldable("output"),
+  plot = hook_foldable("plot")
+)
+
+Q <- 0
+```
+
+```{r}
+# Load required libraries
+library(data.table)
+library(dplyr)
+library(stringr)
+library(tidyr)
+library(magrittr)
+library(readr)
+library(lubridate)
+library(kableExtra)
+library(ggplot2)
+library(corrplot)
+library(lmtest)
+library(sandwich)
+library(stargazer)
+library(margins)
+library(car)
+library(mice)
+
+```
+
+# Data Cleaning
+
+## CES Public Use Microdata
+
+```{r}
+
+# Define the directory containing all data files
+data_dir <- "C:/Users/vanho/Desktop/DA 401/all data"
+
+# List all files in the directory
+all_files <- list.files(data_dir, full.names = TRUE)
+
+# Helper function to extract year and quarter from the file names
+extract_year_quarter <- function(file_path) {
+  file_name <- basename(file_path)
+  # Extract the two-digit year and adjust accordingly
+  year <- as.numeric(str_extract(file_name, "\\d{2}"))
+  year <- ifelse(year > 50, 1900 + year, 2000 + year)  # Handle two-digit year format
+  
+  # Extract quarter information if present
+  quarter <- ifelse(str_detect(file_name, "Q[1-4]|q[1-4]"), as.numeric(str_extract(file_name, "[1-4]")), NA)
+  
+  # Adjust for files with "x" indicating different releases
+  x_indicator <- str_detect(file_name, "x")
+  if (x_indicator) {
+    # Assign quarter for files labeled with 'x'
+    quarter <- ifelse(is.na(quarter), 1, quarter)
+  } else {
+    quarter <- ifelse(is.na(quarter), 5, quarter)  # Assign 5 for files from the fifth quarter
+  }
+  
+  return(list(year = year, quarter = quarter))
+}
+
+# Function to clean and prepare FMLI files
+clean_fmli <- function(file_path) {
+  info <- extract_year_quarter(file_path)
+  
+  # Error handling for file reading
+  tryCatch({
+    data <- fread(file_path, na.strings = c("", ".", "NA"))
+    # Convert column names to lowercase and select key variables
+    data <- data %>%
+      rename_with(~ tolower(.x)) %>%
+      filter(state == 6 | state == 12 | state ==48) %>% # 
+      mutate(
+        newid = as.character(newid),  # Ensure newid is a character
+        year = info$year,
+        quarter = info$quarter,
+        fsize = coalesce(fam_size, NA),
+        urbrur = coalesce(bls_urbn, NA),
+        gender = coalesce(sex_ref, NA),
+        fincbtxm = coalesce(fincbtxm, NA),
+        state=coalesce(state,NA)
+    
+      ) %>%
+      select(newid, year, quarter, fsize, gender, fincbtxm, educa2, state )
+    
+    return(data)
+  }, error = function(e) {
+    message(paste("Error reading FMLI file:", file_path, "-", e$message))
+    return(NULL)
+  })
+}
+
+# Function to clean MTBI files (Monthly Expenditure - Gasoline)
+clean_mtbi <- function(file_path) {
+  info <- extract_year_quarter(file_path)
+  ucc_codes <- c("470111")  # UCC codes for gasoline expenditures
+  
+  tryCatch({
+    fread(file_path, na.strings = c("", ".", "NA")) %>%
+      rename_with(~ tolower(.x)) %>%
+      filter(ucc %in% ucc_codes) %>%
+      mutate(
+        newid = as.character(newid),  # Ensure newid is a character
+        year = info$year,
+        quarter = info$quarter
+      ) %>%
+      group_by(newid, year, quarter) %>%
+      summarise(gasoline_expenditure = sum(cost, na.rm = TRUE), .groups = 'drop')
+  }, error = function(e) {
+    message(paste("Error reading MTBI file:", file_path, "-", e$message))
+    return(NULL)
+  })
+}
+
+# Wrapper function to apply the correct cleaning function based on file type
+clean_data_file <- function(file_path) {
+  if (grepl("fmli", file_path, ignore.case = TRUE)) {
+    return(clean_fmli(file_path))
+  } else if (grepl("mtbi", file_path, ignore.case = TRUE)) {
+    return(clean_mtbi(file_path))
+ # } else if (grepl("ntaxi", file_path, ignore.case = TRUE)) {
+  #  return(clean_ntaxi(file_path))
+  }
+  NULL
+}
+
+# Apply the cleaning function to all relevant files and merge the results
+cleaned_data <- lapply(all_files, clean_data_file) %>%
+  bind_rows() %>%
+
+  mutate(across(everything(), ~replace_na(.x, NA)))
+
+
+```
+
+## Gas Prices Data
+
+```{r}
+# Load California Gas Prices Dataset directly
+gas_prices_file_path <- file.path(data_dir, "Cali_gas_prices.csv")
+# Read in California gas prices data
+california_gas_prices <- read_csv(gas_prices_file_path, na = c("", ".", "NA"))
+
+# Clean the California gas prices dataset
+california_gas_prices <- california_gas_prices %>%
+  mutate(
+    Date = mdy(Date),  # Convert Date column from character to Date type (assuming format is "Month Day, Year")
+    year = as.integer(year(Date)),  # Extract year as integer
+    quarter = as.integer(quarter(Date))  # Extract quarter as integer
+  ) %>%
+  group_by(year, quarter) %>%
+  summarise(average_gas_price_ca = mean(Gas_prices, na.rm = TRUE), .groups = 'drop')
+
+# Load Texas Gas Prices Dataset directly
+gas_prices_tx_file_path <- file.path(data_dir, "Texas_gas_prices.csv")
+# Read in Texas gas prices data
+texas_gas_prices <- read_csv(gas_prices_tx_file_path, na = c("", ".", "NA"))
+
+# Clean the Texas gas prices dataset
+texas_gas_prices <- texas_gas_prices %>%
+  mutate(
+    Date = mdy(Date),  # Convert Date column from character to Date type (assuming format is "Month Day, Year")
+    year = as.integer(year(Date)),  # Extract year as integer
+    quarter = as.integer(quarter(Date))  # Extract quarter as integer
+  ) %>%
+  group_by(year, quarter) %>%
+  summarise(average_gas_price_tx = mean(Gas_prices, na.rm = TRUE), .groups = 'drop')
+
+# Load Florida Gas Prices Dataset directly
+gas_prices_fl_file_path <- file.path(data_dir, "Florida_gas_prices.csv")
+# Read in Florida gas prices data
+florida_gas_prices <- read_csv(gas_prices_fl_file_path, na = c("", ".", "NA"))
+
+# Clean the Florida gas prices dataset
+florida_gas_prices <- florida_gas_prices %>%
+  mutate(
+    Date = mdy(Date),  # Convert Date column from character to Date type (assuming format is "Month Day, Year")
+    year = as.integer(year(Date)),  # Extract year as integer
+    quarter = as.integer(quarter(Date))  # Extract quarter as integer
+  ) %>%
+  group_by(year, quarter) %>%
+  summarise(average_gas_price_fl = mean(Gas_prices, na.rm = TRUE), .groups = 'drop')
+
+# Ensure 'year' and 'quarter' are integers in cleaned CEX data
+cleaned_data <- cleaned_data %>%
+  mutate(
+    year = as.integer(year),
+    quarter = as.integer(quarter)
+  )
+
+# Merge cleaned CEX data with California, Texas, and Florida Gas Prices
+final_data <- cleaned_data %>%
+  left_join(california_gas_prices, by = c("year", "quarter")) %>%
+  left_join(texas_gas_prices, by = c("year", "quarter")) %>%
+  left_join(florida_gas_prices, by = c("year", "quarter"))  # Merge based on year and quarter to add gas prices to each row
+
+
+```
+
+## Poverty Threshold Implemented & Educational Levels
+
+```{r}
+
+# Poverty threshold data as per US Census in 2023
+poverty_thresholds <- data.frame(
+  family_size = c(1, 2, 3, 4, 5, 6, 7, 8, 9),
+  threshold = c(15480, 19680, 24230, 31200, 36990, 41860, 47670, 52850, 62900)
+)
+
+# Adding the income level poverty variable
+final_data <- final_data %>%
+  left_join(poverty_thresholds, by = c("fsize" = "family_size")) %>%
+  mutate(
+    income_level_poverty = ifelse(fincbtxm <= threshold, 1, 0)
+  ) %>%
+  select(-threshold)  # Remove the threshold column as it is no longer needed
+
+
+
+```
+
+## Data Wrangling
+
+```{r}
+
+# Rename education categories in educa2
+final_data <- final_data %>%
+  mutate(educa2 = case_when(
+    educa2 == 0 ~ "Unknown",
+    educa2 == 1 ~ "Elementary (1-8 yrs.)",
+    educa2 == 2 ~ "High School (1-4 yrs.), No Diploma",
+    educa2 == 3 ~ "High School Graduate",
+    educa2 == 4 ~ "Some College, No Degree",
+    educa2 == 5 ~ "College Graduate (4 yrs.)",
+    educa2 == 6 ~ "More than 4 yrs. College",
+    educa2 == 7 ~ "Never Attended School",
+    educa2 == 10 ~ "Nursery, Kindergarten, Elementary (Grades 1-8)",
+    educa2 == 11 ~ "High School (Grades 9-12), No Diploma",
+    educa2 == 12 ~ "High School Graduate",
+    educa2 == 13 ~ "Some College, No Degree",
+    educa2 == 14 ~ "Associate's Degree",
+    educa2 == 15 ~ "Bachelor's Degree",
+    educa2 == 16 ~ "Master's, Professional, or Doctorate",
+    educa2 == 17 ~ "Professional or Doctorate Degree",
+    TRUE ~ "Other"
+  ))
+
+final_data <- final_data %>%
+  mutate(
+    state = case_when(
+      state == 6 ~ "California",
+      state == 12 ~ "Florida",
+      state == 48 ~ "Texas",
+      TRUE ~ NA_character_  # Replace "Other" with NA for imputation
+    ),
+    state = as.factor(state),  # Convert state to factor for later imputation
+    educa2 = as.factor(educa2) # Convert education level to factor for later imputation
+  )
+
+# Assign Gas Prices Based on State:
+final_data <- final_data %>%
+  mutate(
+    average_gas_price = case_when(
+      state == "California" ~ average_gas_price_ca,
+      state == "Texas" ~ average_gas_price_tx,
+      state == "Florida" ~ average_gas_price_fl,
+      TRUE ~ NA_real_
+    )
+  )
+
+# Create an indicator for treatment group (California)
+final_data <- final_data %>%
+  mutate(
+    CA_i = ifelse(state == "California", 1, 0),
+    post_tax_period = ifelse(year >= 2015, 1, 0)  # Indicator for post-cap-and-trade implementation
+  )
+
+# Remove quarter 5
+final_data <- final_data %>%
+  filter(quarter < 5)
+
+
+# Convert categorical binary variables to numeric (0/1)
+final_data <- final_data %>%
+  mutate(
+    gender = ifelse(gender == 2, 1, 0))  # Female = 1, Male = 0
+```
+
+## Data Imputations
+
+```{r}
+# Run MICE for both numerical and categorical variables
+imputed_data <- mice(final_data, m = 5, maxit = 50, seed = 123)
+
+# Extract completed data after imputation
+complete_data <- complete(imputed_data, 1)
+str(complete_data)
+unique(complete_data$state)
+
+# Save the final dataset
+write.csv(complete_data, "complete_data.csv")
+```
+
+## 

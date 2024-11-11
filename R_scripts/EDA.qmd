@@ -1,0 +1,96 @@
+---
+title: "Exploratory Data Analysis "
+author: "Jason Tran"
+institute: "Denison University"
+format: 
+  html:
+    theme: lux # Check here for more themes: https://quarto.org/docs/output-formats/html-themes.html
+    code-tools: true
+    code-fold: true
+    code-summary: "Code"
+    code-copy: hover
+    link-external-newwindow: true
+    tbl-cap-location: top
+    fig-cap-location: bottom
+
+self-contained: true
+editor: source
+---
+
+# Exploratory Data Analysis
+
+```{r}
+# Load necessary libraries
+library(dplyr)
+library(ggplot2)
+library(kableExtra)
+library(scales)
+
+final_data <- read.csv("complete_data.csv")
+```
+
+
+
+```{r}
+# Generate density plot for household income by pre-tax and post-tax periods with polished caption and annotations
+income_density_plot <- ggplot(final_data, aes(x = fincbtxm, fill = factor(post_tax_period))) + 
+  geom_density(alpha = 0.6, adjust = 1.5) + 
+  scale_fill_manual(name = "Tax Period", values = c("#9cb380", "#a44a3f"), labels = c("Pre-Tax Period", "Post-Tax Period")) + 
+  labs(
+    title = "Figure 1:Household Income Distribution by Tax Periods",
+    x = "Household Income (USD, Log Scale)",
+    y = "Density",
+    caption = "Distribution of household income during pre-tax and post-tax periods."
+  ) + 
+  theme_minimal(base_size = 14) + 
+  theme(
+    plot.title = element_text(hjust = 0.5, face = "bold", size = 14),
+    legend.position = "top",
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  ) + 
+  scale_x_continuous(trans = 'log10', limits = c(1e3, 1e6))   # Log transformation for better visualization
+
+ggsave("income_density_plot.png", income_density_plot, width = 8, height = 5)
+
+# Generate violin plot with boxplot for gasoline expenditure by pre-tax and post-tax periods with annotations
+expenditure_violin_plot <- ggplot(final_data, aes(x = factor(post_tax_period), y = gasoline_expenditure, fill = factor(post_tax_period))) + 
+  geom_violin(trim = FALSE, alpha = 0.4) + 
+  geom_boxplot(outlier.shape = NA, width = 0.1, alpha = 0.6) + 
+  scale_fill_manual(values = c("#9cb380", "#a44a3f")) + 
+  scale_y_continuous(trans = "log10", breaks = scales::trans_breaks("log10", function(x) 10^x), labels = scales::trans_format("log10", scales::math_format(10^.x))) + 
+  labs(
+    title = "Figure 2:Gasoline Expenditure by Tax Periods (Log Scale)",
+    x = "Post-Tax Period Indicator (0 = Pre, 1 = Post)",
+    y = "Gasoline Expenditure (Log Scale, USD)",
+    caption = "Distribution of gasoline expenditure before and after tax period. Median decreased post-tax."
+  ) + 
+  theme_minimal(base_size = 14) + 
+  theme(
+    plot.title = element_text(hjust = 0.5, face = "bold", size = 14),
+    legend.position = "none"
+  ) + 
+  annotate("text", x = 2, y = 10, label = "Median expenditure decreased in post-tax period", color = "darkblue", size = 4, angle = 0)
+
+ggsave("expenditure_violin_plot.png", expenditure_violin_plot, width = 8, height = 5)
+
+# Generate scatter plot of gasoline expenditure vs. average gas price with annotation
+scatter_gas_expenditure_plot <- ggplot(final_data, aes(x = average_gas_price, y = gasoline_expenditure)) + 
+  geom_point(alpha = 0.05, color = "#a44a3f") + 
+  geom_smooth(method = "lm", se = TRUE, color = "#9cb380") + 
+  scale_y_continuous(trans = "log10", breaks = scales::trans_breaks("log10", function(x) 10^x), labels = scales::trans_format("log10", scales::math_format(10^.x))) + 
+  labs(
+    title = "Figure 3:Impact of Average Gas Prices on Gasoline Expenditure (Log Scale)",
+    x = "Average Gas Price (USD per gallon)",
+    y = "Gasoline Expenditure (Log Scale, USD)",
+    caption = "Scatter plot illustrating the relationship between average gas prices and gasoline expenditure. The fitted line suggests a trend."
+  ) + 
+  theme_minimal(base_size = 14) + 
+  theme(
+    plot.title = element_text(hjust = 0.5, face = "bold", size = 14),
+    panel.grid.minor = element_blank()
+  )
+
+ggsave("scatter_gas_expenditure_plot.png", scatter_gas_expenditure_plot, width = 8, height = 5)
+
+```
+
