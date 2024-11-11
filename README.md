@@ -1,11 +1,17 @@
 # Socioeconomic Impact of California's Cap-and-Trade Program
 
-This repository contains all the materials for my senior thesis project, which explores the socioeconomic impact of California's cap-and-trade program on household gasoline consumption from 2007 to 2019. The project employs econometric techniques like Difference-in-Differences (DiD) and Propensity Score Matching (PSM) to evaluate the effects, particularly on low-income households, accounting for factors such as gender, education, and household characteristics.
+This repository contains all the materials for my senior thesis project, which examines the socioeconomic impact of California's cap-and-trade program on household gasoline consumption from 2007 to 2019. The project applies econometric techniques such as Difference-in-Differences (DiD) and Propensity Score Matching (PSM) to evaluate the program's effects, particularly on low-income households, taking into account factors such as gender, education, and household characteristics.
 
 ## Repository Contents
-\data: Include data used in the research and instructions to download them.
-\R Scripts:
-      - EDA.qmd: Script for exploratory data analysis.
-      -data_cleaning.qmd: Data cleaning script.
-      -Modeling.qmd: Model building and analysis.
-\doc: Includes generated graphs, charts, tables and researach report
+
+### Data
+- Includes datasets used in the research and instructions for downloading additional data.
+
+### R Scripts
+- **EDA.qmd**: Script for Exploratory Data Analysis.
+- **data_cleaning.qmd**: Script for data cleaning processes.
+- **Modeling.qmd**: Script for model building and analysis.
+
+### Documentation
+- Generated visualizations, including graphs, charts, and tables.
+- Full research report summarizing findings and insights.
