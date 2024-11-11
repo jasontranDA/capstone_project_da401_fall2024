@@ -2,7 +2,7 @@
 # Technologies & Libraries Used
 
 ## Integrated Development Environment (IDE)
-## RStudio: The IDE used for development.
+## RStudio: The IDE used for development. Use the latest version.
 
 ### Load necessary libraries
 - library(dplyr)          # Data manipulation
