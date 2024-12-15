@@ -1,10 +1,10 @@
 ---
-title: "Exploratory Data Analysis "
+title: "Exploratory Data Analysis - DA 401 Final Project "
 author: "Jason Tran"
 institute: "Denison University"
 format: 
   html:
-    theme: lux # Check here for more themes: https://quarto.org/docs/output-formats/html-themes.html
+    theme: lux
     code-tools: true
     code-fold: true
     code-summary: "Code"
@@ -26,71 +26,164 @@ library(ggplot2)
 library(kableExtra)
 library(scales)
 
+# Read the data
 final_data <- read.csv("complete_data.csv")
 ```
 
-
-
 ```{r}
-# Generate density plot for household income by pre-tax and post-tax periods with polished caption and annotations
+# Figure 1: Enhanced Income Density Plot
 income_density_plot <- ggplot(final_data, aes(x = fincbtxm, fill = factor(post_tax_period))) + 
-  geom_density(alpha = 0.6, adjust = 1.5) + 
-  scale_fill_manual(name = "Tax Period", values = c("#9cb380", "#a44a3f"), labels = c("Pre-Tax Period", "Post-Tax Period")) + 
+  geom_density(alpha = 0.7, adjust = 1.5) + 
+  scale_fill_manual(name = "Tax Period", 
+                   values = c("#2C3E50", "#E74C3C"), 
+                   labels = c("Pre-Tax Period", "Post-Tax Period")) + 
   labs(
-    title = "Figure 1:Household Income Distribution by Tax Periods",
+    title = "Household Income Distribution Across Tax Periods",
     x = "Household Income (USD, Log Scale)",
     y = "Density",
-    caption = "Distribution of household income during pre-tax and post-tax periods."
+    caption = "Note: Distribution shows household income patterns before and after tax implementation."
   ) + 
-  theme_minimal(base_size = 14) + 
+  theme_minimal(base_size = 12) + 
   theme(
     plot.title = element_text(hjust = 0.5, face = "bold", size = 14),
+    plot.caption = element_text(face = "italic", size = 10),
     legend.position = "top",
-    axis.text.x = element_text(angle = 45, hjust = 1)
+    legend.title = element_text(face = "bold"),
+    panel.grid.minor = element_blank(),
+    panel.grid.major = element_line(color = "gray90")
   ) + 
-  scale_x_continuous(trans = 'log10', limits = c(1e3, 1e6))   # Log transformation for better visualization
+  scale_x_continuous(trans = 'log10', 
+                    limits = c(1e3, 1e6),
+                    labels = scales::dollar_format(scale = 1))
 
 ggsave("income_density_plot.png", income_density_plot, width = 8, height = 5)
+print(income_density_plot)
+```
 
-# Generate violin plot with boxplot for gasoline expenditure by pre-tax and post-tax periods with annotations
-expenditure_violin_plot <- ggplot(final_data, aes(x = factor(post_tax_period), y = gasoline_expenditure, fill = factor(post_tax_period))) + 
-  geom_violin(trim = FALSE, alpha = 0.4) + 
-  geom_boxplot(outlier.shape = NA, width = 0.1, alpha = 0.6) + 
-  scale_fill_manual(values = c("#9cb380", "#a44a3f")) + 
-  scale_y_continuous(trans = "log10", breaks = scales::trans_breaks("log10", function(x) 10^x), labels = scales::trans_format("log10", scales::math_format(10^.x))) + 
+```{r}
+# Figure 2: Enhanced Violin Plot
+expenditure_violin_plot <- ggplot(final_data, 
+       aes(x = factor(post_tax_period), 
+           y = gasoline_expenditure, 
+           fill = factor(post_tax_period))) + 
+  geom_violin(trim = FALSE, alpha = 0.6) + 
+  geom_boxplot(width = 0.15, alpha = 0.7, outlier.alpha = 0.3) + 
+  scale_fill_manual(values = c("#2C3E50", "#E74C3C")) + 
+  scale_y_continuous(trans = "log10", 
+                    labels = scales::dollar_format(scale = 1)) + 
   labs(
-    title = "Figure 2:Gasoline Expenditure by Tax Periods (Log Scale)",
-    x = "Post-Tax Period Indicator (0 = Pre, 1 = Post)",
-    y = "Gasoline Expenditure (Log Scale, USD)",
-    caption = "Distribution of gasoline expenditure before and after tax period. Median decreased post-tax."
+    title = "Distribution of Gasoline Expenditure by Tax Period",
+    x = "Tax Period",
+    y = "Gasoline Expenditure (USD, Log Scale)",
+    caption = "Note: Box plots show median, quartiles, and outliers. Width represents density."
   ) + 
-  theme_minimal(base_size = 14) + 
+  scale_x_discrete(labels = c("Pre-Tax", "Post-Tax")) +
+  theme_minimal(base_size = 12) + 
   theme(
     plot.title = element_text(hjust = 0.5, face = "bold", size = 14),
-    legend.position = "none"
-  ) + 
-  annotate("text", x = 2, y = 10, label = "Median expenditure decreased in post-tax period", color = "darkblue", size = 4, angle = 0)
+    plot.caption = element_text(face = "italic", size = 10),
+    legend.position = "none",
+    panel.grid.minor = element_blank(),
+    panel.grid.major.x = element_blank()
+  )
+
 
 ggsave("expenditure_violin_plot.png", expenditure_violin_plot, width = 8, height = 5)
 
-# Generate scatter plot of gasoline expenditure vs. average gas price with annotation
-scatter_gas_expenditure_plot <- ggplot(final_data, aes(x = average_gas_price, y = gasoline_expenditure)) + 
-  geom_point(alpha = 0.05, color = "#a44a3f") + 
-  geom_smooth(method = "lm", se = TRUE, color = "#9cb380") + 
-  scale_y_continuous(trans = "log10", breaks = scales::trans_breaks("log10", function(x) 10^x), labels = scales::trans_format("log10", scales::math_format(10^.x))) + 
+print(expenditure_violin_plot)
+```
+
+```{r}
+# Figure 3: Enhanced Scatter Plot
+scatter_gas_expenditure_plot <- ggplot(final_data, 
+       aes(x = average_gas_price, y = gasoline_expenditure)) + 
+  geom_point(alpha = 0.15, color = "#2C3E50", size = 0.8) + 
+  geom_smooth(method = "lm", 
+             se = TRUE, 
+             color = "#E74C3C", 
+             fill = "#E74C3C20") + 
+  scale_y_continuous(trans = "log10", 
+                    labels = scales::dollar_format(scale = 1)) + 
+  scale_x_continuous(labels = scales::dollar_format()) +
   labs(
-    title = "Figure 3:Impact of Average Gas Prices on Gasoline Expenditure (Log Scale)",
+    title = "Relationship Between Gas Prices and Expenditure",
     x = "Average Gas Price (USD per gallon)",
-    y = "Gasoline Expenditure (Log Scale, USD)",
-    caption = "Scatter plot illustrating the relationship between average gas prices and gasoline expenditure. The fitted line suggests a trend."
+    y = "Gasoline Expenditure (USD, Log Scale)"
+
   ) + 
-  theme_minimal(base_size = 14) + 
+  theme_minimal(base_size = 12) + 
   theme(
     plot.title = element_text(hjust = 0.5, face = "bold", size = 14),
-    panel.grid.minor = element_blank()
+    plot.caption = element_text(face = "italic", size = 10),
+    panel.grid.minor = element_blank(),
+    panel.grid.major = element_line(color = "gray90")
   )
 
 ggsave("scatter_gas_expenditure_plot.png", scatter_gas_expenditure_plot, width = 8, height = 5)
+print(scatter_gas_expenditure_plot)
+```
+
+```{r}
+# Ensure data is grouped by CA_i and year
+median_data <- final_data %>%
+  group_by(CA_i, year) %>%
+  summarize(median_expenditure = median(gasoline_expenditure, na.rm = TRUE)) %>%
+  ungroup()
+
+# Add a smoothed version of median expenditure using rolling averages
+median_data <- median_data %>%
+  group_by(CA_i) %>%
+  mutate(smoothed_expenditure = zoo::rollmean(median_expenditure, k = 3, fill = NA)) %>%
+  ungroup()
+
+# Figure 4: Enhanced Parallel Trends Plot
+parallel_trends_plot <- ggplot(median_data, 
+       aes(x = year, y = median_expenditure, color = factor(CA_i))) +
+  # Add shaded background for post-policy period
+  annotate("rect", 
+          xmin = 2015, 
+          xmax = max(median_data$year), 
+          ymin = -Inf, 
+          ymax = Inf, 
+          fill = "gray95", 
+          alpha = 0.3) +
+  # Add trend lines
+  geom_line(aes(y = smoothed_expenditure), size = 1.2) +
+  # Policy implementation line
+  geom_vline(xintercept = 2015, 
+             linetype = "dashed", 
+             color = "blue", 
+             linewidth = 1) +
+  scale_y_log10(labels = scales::dollar_format(scale = 1)) +
+  scale_color_manual(
+    values = c("#2C3E50", "#E74C3C"),
+    labels = c("Control States (Florida and Texas)", "California"),
+    name = "Group"
+  ) +
+  labs(
+    title = "Parallel Trends in Gasoline Expenditure",
+    subtitle = "Pre and Post-Tax Period Analysis",
+    x = "Year",
+    y = "Median Gasoline Expenditure (USD, Log Scale)",
+    caption = "Note: Vertical dashed line indicates policy implementation (2015)."
+  ) + 
+  theme_minimal(base_size = 12) + 
+  theme(
+    plot.title = element_text(hjust = 0.5, face = "bold", size = 14),
+    plot.subtitle = element_text(hjust = 0.5, size = 12),
+    legend.position = "top",
+    legend.title = element_text(face = "bold"),
+    axis.text.x = element_text(angle = 0),
+    panel.grid.minor = element_blank(),
+    panel.grid.major = element_line(color = "gray90")
+  )
+# Save the enhanced plot
+ggsave("enhanced_parallel_trends_plot.png", parallel_trends_plot, width = 10, height = 6, dpi = 300)
+
+# Display the plot
+print(parallel_trends_plot)
+
 
 ```
+
 
