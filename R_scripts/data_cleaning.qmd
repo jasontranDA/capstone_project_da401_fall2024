@@ -20,7 +20,7 @@ editor: source
 ---
 
 ```{r}
-# DO NOT EDIT THIS
+# DO NOT EDIT THIS, FOR FORMATTING ONLY
 
 knitr::opts_chunk$set(fig.align = 'center')
 knitr::opts_chunk$set(out.width = '90%')
