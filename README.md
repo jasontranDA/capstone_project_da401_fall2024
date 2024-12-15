@@ -13,8 +13,8 @@ This repository contains all the materials for my senior thesis project, which e
 - **Modeling.qmd**: Script for model building and analysis.
 
 ### \Documentation
-- Full research report summarizing findings and insights.
+- Full research report summarizing findings and insights (first draft and final draft).
 - Early Research Design of the study.
 
 ### \Figures 
-- Graphs and Tables of EDA and regression results.
+- Graphs and Tables of EDA and regression results with variable definitions.
